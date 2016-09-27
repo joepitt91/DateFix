@@ -1,7 +1,7 @@
 param ([switch]$verbose)
+$oldverbose = $VerbosePreference
 if($verbose) 
 {
-	$oldverbose = $VerbosePreference
 	$VerbosePreference = "continue" 
 }
 
@@ -34,7 +34,7 @@ function Get-EXIFDate
 		$takenValue = [System.Text.Encoding]::Default.GetString($takenData, 0, $takenData.Length - 1)
 		$taken = [DateTime]::ParseExact($takenValue, 'yyyy:MM:dd HH:mm:ss', $null)
 		$image.Dispose()
-		return $taken.ToString('yyyy-MM-dd HH mm ss')
+		return $taken.ToString('yyyyMMdd_HHmmss')
 	}
 	catch
 	{
@@ -94,137 +94,261 @@ foreach ($file in $files)
 	$NewName = $file.Name.Substring(0, $file.Name.LastIndexOf('.'))
 	$ext = $file.Name.Substring($file.Name.LastIndexOf('.'))
 
-	#EXIF (Preferred)
+    ## Detect DateTime
+
+	# EXIF (Preferred)
 	$EXIFDate = Get-EXIFDate $file.FullName
 	if ($EXIFDate -ne $null)
 	{
 		$NewName = $EXIFDate
 		Write-Verbose "  Using EXIF Date Taken"
 	}
+    # Filename Fallback
 	else
 	{
 		Write-Verbose "  EXIF Date Taken not found, trying RegEx"
 		switch -Regex ($NewName)
 		{
-			# yyyyddmm_hhmmss
-			'^[0-9]{8}_[0-9]{6}$'
-			{
-				Write-Verbose "  Match: yyyyddmm_hhmmss"
-				$namearray = $NewName.ToCharArray()
-				$NewName = $namearray[0] + $namearray[1] + $namearray[2] + $namearray[3] + "-" + $namearray[4] + $namearray[5] + "-" + $namearray[6] + $namearray[7] + " " + $namearray[9] + $namearray[10] + " " + $namearray[11] + $namearray[12] + " " + $namearray[13] + $namearray[14]
-			}
+            # Preferred Format yyyyddmm_hhmmss or yyyyddmm_hhmmss-FreeText
+            '^[0-9]{8}_[0-9]{6}(-[^/\\?%*:|"<>. ]+)?$'
+            {
+                Write-Verbose "  Match: yyyyddmm_hhmmss or yyyyddmm_hhmmss-FreeText (Preferred)"
+                break
+            }
+
 			# yyyyddmm_hhmmss_n
-			'^[0-9]{8}_[0-9]{6}_[0-9]{1}$'
+			'^[0-9]{8}_[0-9]{6}_[^/\\?%*:|"<>. ]+$'
 			{
 				Write-Verbose "  Match: yyyyddmm_hhmmss_n"
-				$namearray = $NewName.ToCharArray()
-				$NewName = $namearray[0] + $namearray[1] + $namearray[2] + $namearray[3] + "-" + $namearray[4] + $namearray[5] + "-" + $namearray[6] + $namearray[7] + " " + $namearray[9] + $namearray[10] + " " + $namearray[11] + $namearray[12] + " " + $namearray[13] + $namearray[14] + $namearray[15]  + $namearray[16]
+                $NewName = $NewName.Substring(0, 15) + "-" + $NewName.Substring(16)
+                Write-Verbose "    > $NewName"
+                break
 			}
-			# IMG_yyyymmdd_hhmmss
-			'^IMG_[0-9]{8}_[0-9]{6}$'
+
+			# IMG_yyyymmdd_hhmmss or IMG_yyyymmdd_hhmmss~x
+			'^IMG_[0-9]{8}_[0-9]{6}(~[0-9]+)$'
 			{
 				Write-Verbose "  Match: IMG_yyyymmdd_hhmmss"
-				$namearray = $NewName.Substring(4).ToCharArray()
-				$NewName = $namearray[0] + $namearray[1] + $namearray[2] + $namearray[3] + "-" + $namearray[4] + $namearray[5] + "-" + $namearray[6] + $namearray[7] + " " + $namearray[9] + $namearray[10] + " " + $namearray[11] + $namearray[12] + " " + $namearray[13] + $namearray[14]
+                $NewName = $NewName.Substring(4)
+                Write-Verbose "    > $NewName"
+                break
 			}
+
 			# IMG-yyyymmdd-WAnnnn
 			'^IMG-[0-9]{8}-WA[0-9]{4}$'
 			{
 				Write-Verbose "  Match: IMG-yyyymmdd-WAnnnn"
-				$namearray = $NewName.Substring(4).ToCharArray()
-				$NewName = $namearray[0] + $namearray[1] + $namearray[2] + $namearray[3] + "-" + $namearray[4] + $namearray[5] + "-" + $namearray[6] + $namearray[7] + " 00 00 00_" + $namearray[14]
+                $NewName = "$($NewName.Substring(4, 8))_000000"
+				Write-Verbose "    > $NewName"
+                break
 			}
+
 			# Photo dd-mm-yyyy hh mm ss
 			'^Photo [0-9]{2}-[0-9]{2}-[0-9]{4} [0-9]{2} [0-9]{2} [0-9]{2}$'
 			{
 				Write-Verbose "  Match: Photo dd-mm-yyyy hh mm ss"
-				$namearray = $NewName.ToCharArray()
-				$NewName = $namearray[6] + $namearray[7] + $namearray[8] + $namearray[9] + "-" + $namearray[3] + $namearray[4] + "-" + $namearray[0] + $namearray[1] + " " + $namearray[11] + $namearray[12] + " " + $namearray[14] + $namearray[15] + " " + $namearray[17] + $namearray[18]
+				$NewName = $NewName.Substring(6)
+				$NewName = $NewName.Substring(6, 4) + $NewName.Substring(3, 2) + $NewName.Substring(0, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2)
+                Write-Verbose "    > $NewName"
+                break
 			}
-			# Desktop mm.dd.yyyy - hh.mm.ss.xx
+
+			# Desktop dd.mm.yyyy - hh.mm.ss.xx
 			'^Desktop [0-9]{2}\.[0-9]{2}\.[0-9]{4} - [0-9]{2}\.[0-9]{2}\.[0-9]{2}(\.[0-9]{2})*$'
 			{
-				Write-Verbose "  Match: Desktop mm.dd.yyyy - hh.mm.ss.x"
-				$namearray = $NewName.ToCharArray()
-				$NewName = $namearray[14] + $namearray[15] + $namearray[16] + $namearray[17] + "-" + $namearray[8] + $namearray[9] + "-" + $namearray[11] + $namearray[12] + " " + $namearray[21] + $namearray[22] + " " + $namearray[24] + $namearray[25] + " " + $namearray[27] + $namearray[28]
+				Write-Verbose "  Match: Desktop dd.mm.yyyy - hh.mm.ss.x"
+                $NewName = $NewName.Split(8)
+				$NewName = $NewName.Substring(6, 4) + $NewName.Substring(3, 2) + $NewName.Substring(0, 2) + "_" + $NewName.Substring(13, 2) + $NewName.Substring(16, 2) + $NewName.Substring(19, 2) + "-" + $NewName.Substring(22)
+                Write-Verbose "    > $NewName"
+                break
 			}
+
 			# download_yyyymmdd_hhmmss
 			'^download_[0-9]{8}_[0-9]{6}$'
 			{
 				Write-Verbose "  Match: download_yyyymmdd_hhmmss"
-				$namearray = $NewName.ToCharArray()
-				$NewName = $namearray[9] + $namearray[10] + $namearray[11] + $namearray[12] + "-" + $namearray[13] + $namearray[14] + "-" + $namearray[15] + $namearray[16] + " " + $namearray[18] + $namearray[19] + " " + $namearray[20] + $namearray[21] + " " + $namearray[22] + $namearray[23]
+                $NewName = $NewName.Substring(9)
+                Write-Verbose "    > $NewName"
+                break
 			}
+
+            # image_yyyymmdd_hhmmss
+			'^image_[0-9]{8}_[0-9]{6}$'
+			{
+				Write-Verbose "  Match: download_yyyymmdd_hhmmss"
+                $NewName = $NewName.Substring(6)
+                Write-Verbose "    > $NewName"
+                break
+			}
+
+            # Screenshot_yyyymmdd-hhmmss
+            '^Screenshot_[0-9]{8}-[0-9]{6}$'
+            {
+                Write-Verbose "  Match: Screenshot_yyyymmdd-hhmmss"
+                $NewName = $NewName.Substring(11, 8) + "_" + $NewName.Substring(20, 6)
+                Write-Verbose "    > $NewName"
+                break
+            }
+
 			# yyyy-mm-dd
 			'^[0-9]{4}-[0-9]{2}-[0-9]{2}( \([0-9]+\))$'
 			{
 				Write-Verbose "  Match: yyyy-mm-dd"
-				$NewName = $NewName.SubString(0, 10) + " 00 00 00"
+                $NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_000000"
+				Write-Verbose "    > $NewName"
+                break
 			}
+
 			# yyyy-mm-dd hh mm
 			'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2} [0-9]{2}$'
 			{
 				Write-Verbose "  Match: yyyy-mm-dd hh mm"
-				$NewName = $NewName.SubString(0, 16) + " 00"
+				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + "00"
+                Write-Verbose "    > $NewName"
+                break
 			}
+
 			# Screenshot yyyy-mm-dd hh.mm.ss
 			'^Screenshot [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}\.[0-9]{2}\.[0-9]{2}$'
 			{
 				Write-Verbose "  Match: Screenshot yyyy-mm-dd hh.mm.ss"
-				$namearray = $NewName.ToCharArray()
-				$NewName = $namearray[11] + $namearray[12] + $namearray[13] + $namearray[14] + "-" + $namearray[16] + $namearray[17] + "-" + $namearray[19] + $namearray[20] + " " + $namearray[22] + $namearray[23] + " " + $namearray[25] + $namearray[26] + " " + $namearray[28] + $namearray[29]
+                $NewName = $NewName.Substring(11)
+                $NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2)
+				Write-Verbose "    > $NewName"
+                break
 			}
+
 			# Screenshot_yyyy-mm-dd-hh-mm-ss
 			'^Screenshot_[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}$'
 			{
 				Write-Verbose "  Match: Screenshot_yyyy-mm-dd-hh-mm-ss"
-				$namearray = $NewName.ToCharArray()
-				$NewName = $namearray[11] + $namearray[12] + $namearray[13] + $namearray[14] + "-" + $namearray[16] + $namearray[17] + "-" + $namearray[19] + $namearray[20] + " " + $namearray[22] + $namearray[23] + " " + $namearray[25] + $namearray[26] + " " + $namearray[28] + $namearray[29]
+				$NewName = $NewName.Substring(11)
+                $NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2)
+				Write-Verbose "    > $NewName"
+                break
 			}
+
 			# VID_yyyymmdd_hhmmss
 			'^VID_[0-9]{8}_[0-9]{6}$'
 			{
 				Write-Verbose "  Match: VID_yyyymmdd_hhmmss"
-				$namearray = $NewName.ToCharArray()
-				$NewName = $namearray[4] + $namearray[5] + $namearray[6] + $namearray[7] + "-" + $namearray[8] + $namearray[9] + "-" + $namearray[10] + $namearray[11] + " " + $namearray[13] + $namearray[14] + " " + $namearray[15] + $namearray[16] + " " + $namearray[17] + $namearray[18]
+				$NewName = $NewName.Substring(4)
+                Write-Verbose "    > $NewName"
+                break
 			}
+
 			# yyyy-mm-dd_xxxxx
 			'^[0-9]{4}-[0-9]{2}-[0-9]{2}_[0-9]{5}$'
 			{
 				Write-Verbose "  Match: yyyy-mm-dd_xxxxx"
-				$NewName = $NewName.Substring(0, 10) + " 00 00 00"
+				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_000000"
+				Write-Verbose "    > $NewName"
+                break
 			}
+
 			# yyyy-mm-dd hh mm ss
 			'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2} [0-9]{2} [0-9]{2}$'
 			{
 				Write-Verbose "  Match: yyyy-mm-dd hh mm ss"
-				$NewName = $NewName.Substring(0, 19)
+				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2)
+				Write-Verbose "    > $NewName"
+                break
 			}
+
 			# yyyy-mm-dd hh mm ss (x)
 			'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2} [0-9]{2} [0-9]{2}(_([0-9])+)? \([0-9]+\)$'
 			{
 				Write-Verbose "  Match: yyyy-mm-dd hh mm ss (x)"
-				$temp = $NewName.substring(21)
-				$NewName = $NewName.substring(0, 19) + '_' + $temp.substring(0, $temp.LastIndexOf(')'))
+				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2)
+				Write-Verbose "    > $NewName"
+                break
 			}
+
 			# yyyy-mm-dd hh mm ss_x
 			'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2} [0-9]{2} [0-9]{2}_([0-9])+$'
 			{
 				Write-Verbose "  Match: yyyy-mm-dd hh mm ss_x"
-				$NewName = $NewName
+				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2)
+				Write-Verbose "    > $NewName"
+                break
 			}
+
 			# yyyy-mm-dd hh mm ss (xxx)
-			'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2} [0-9]{2} [0-9]{2}(_([0-9])+){0,1}( \(([a-zA-Z0-9+ ])+\)){0,1}$'
+			'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2} [0-9]{2} [0-9]{2} \(([a-zA-Z0-9+ ])+\)$'
 			{
 				Write-Verbose "  Match: yyyy-mm-dd hh mm ss (xxx)"
-				$NewName = $NewName
+				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2) + "-" + $NewName.Substring(21)
+                $NewName = $NewName.Substring(0, $NewName.Length)
+				Write-Verbose "    > $NewName"
+                break
 			}
+
+            # yyyy-mm-dd hh mm ss_x (xxx)
+			'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2} [0-9]{2} [0-9]{2}_[0-9]+ \(([a-zA-Z0-9+ ])+\)$'
+			{
+				Write-Verbose "  Match: yyyy-mm-dd hh mm ss_x (xxx)"
+                $Suffix = $NewName.Substring(20)
+				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2) + "-" + $Suffix.Substring(0, $Suffix.IndexOf("(") -2) + "-" + $NewName.Substring($NewName.IndexOf("(") + 1)
+                $NewName = $NewName.Substring(0, $NewName.Length)
+				Write-Verbose "    > $NewName"
+                break
+			}
+
+            # yyyy-mm-dd-hh-mm-ss
+			'^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}$'
+			{
+				Write-Verbose "  Match: yyyy-mm-dd hh mm ss"
+				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2)
+				Write-Verbose "    > $NewName"
+                break
+			}
+
+			# yyyy-mm-dd-hh-mm-ss_x
+			'^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}_([0-9])+$'
+			{
+				Write-Verbose "  Match: yyyy-mm-dd hh mm ss_x"
+				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2)
+				Write-Verbose "    > $NewName"
+                break
+			}
+
+			# yyyy-mm-dd-hh-mm-ss (xxx)
+			'^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}(_([0-9])+){0,1} \(([a-zA-Z0-9+ ])+\)$'
+			{
+				Write-Verbose "  Match: yyyy-mm-dd hh mm ss (xxx)"
+				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2) + "-" + $NewName.Substring(21)
+                $NewName = $NewName.Substring(0, $NewName.Length)
+				Write-Verbose "    > $NewName"
+                break
+			}
+
+            # yyyy-mm-dd-hh-mm-ss-(xxx)
+			'^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}(_([0-9])+){0,1}-\(([a-zA-Z0-9+ ])+\)$'
+			{
+				Write-Verbose "  Match: yyyy-mm-dd hh mm ss (xxx)"
+				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2) + "-" + $NewName.Substring(21)
+                $NewName = $NewName.Substring(0, $NewName.Length)
+				Write-Verbose "    > $NewName"
+                break
+			}
+
+            # yyyy-mm-dd-hh-mm-ss_x (xxx)
+			'^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}_[0-9]+ \(([a-zA-Z0-9+ ])+\)$'
+			{
+				Write-Verbose "  Match: yyyy-mm-dd hh mm ss_x (xxx)"
+                $Suffix = $NewName.Substring(20)
+				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2) + "-" + $Suffix.Substring(0, $Suffix.IndexOf(" ")) + "-" + $NewName.Substring($NewName.IndexOf("(") + 1)
+                $NewName = $NewName.Substring(0, $NewName.Length)
+				Write-Verbose "    > $NewName"
+                break
+			}
+
 			# UNKNOWN FORMAT
 			default
 			{
 				Write-Host "Unable to determine timestamp for $($File.FullName)" -ForegroundColor Red
 				$NewName = "FAIL"
-				continue
+				break
 			}
 		}
 	}
@@ -237,20 +361,20 @@ foreach ($file in $files)
 			if (Test-Path $Test) 
 			{
 				$i = 1
-				$Test = $NewName + "_" + $i + $ext
-				if ($file.Name -ne $Test) 
+				$Test = $NewName + "-" + $i + $ext
+				if ($file.Name -ne $Test)
 				{
 					while (Test-Path $Test) 
 					{
 						$i++
-						$Test = $NewName + "_" + $i + $ext
+						$Test = $NewName + "-" + $i + $ext
 						if ($file.Name -eq $Test) 
 						{
 							break
 						}
 					}
 				}
-				$NewName = $NewName + "_" + $i
+				$NewName = $NewName + "-" + $i
 			}
 
 			if ($file.Name -ne $Test) 
@@ -260,7 +384,7 @@ foreach ($file in $files)
 			}
 		}
 		Write-Verbose "  Setting Timestamps..."
-		$TimeStampStr = $NewName.Substring(0, 13) + ":" + $NewName.Substring(14, 2) + ":" + $NewName.Substring(17, 2)
+        $TimeStampStr = $NewName.Substring(0, 4) + "-" + $NewName.Substring(4, 2) + "-" + $NewName.Substring(6, 2) + " " + $NewName.Substring(9, 2) + ":" + $NewName.Substring(11, 2) + ":" + $NewName.Substring(13, 2)
 		$TimeStamp = [datetime]$TimeStampStr
 		Set-FileTimeStamps "$NewName$ext" $TimeStamp
 	}
@@ -268,3 +392,4 @@ foreach ($file in $files)
 Set-Location $origDir
 Write-Verbose "Restored to $origDir"
 $VerbosePreference = $oldverbose
+
