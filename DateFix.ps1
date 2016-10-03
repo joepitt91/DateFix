@@ -2,11 +2,9 @@
 .SYNOPSIS 
     Standardise Photo and Video filenames and timestamps.
 .DESCRIPTION 
-    DateFix.ps1 accepts a folder from the user then works through the files (optionally recursing) to name them as consistently 
-    as possible using the yyyyMMdd_HHmmss.ext format.
+    DateFix.ps1 accepts a folder from the user then works through the files (optionally recursing) to name them as consistently as possible using the yyyyMMdd_HHmmss.ext format.
     
-    The scripts first tries to use the embedded Date Taken EXIF Date, if this is not available the file's current filename is 
-    used.
+    The scripts first tries to use the embedded Date Taken EXIF Date, if this is not available the file's current filename is used.
 .PARAMETER Path
     The root folder to be processed, e.g. C:\Users\Username\Pictures\
 .PARAMETER Recurse
@@ -30,8 +28,7 @@
     Recursively Process C:\Users\Username\Pictures\ with verbose output.
 .NOTES 
     Author  : Joe Pitt
-    License : DateFix by Joe Pitt is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International 
-    License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
+    License : DateFix by Joe Pitt is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 .LINK 
     https://www.joepitt.co.uk/Project/DateFix/
 #>
