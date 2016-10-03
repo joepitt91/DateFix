@@ -1,6 +1,45 @@
-param ([switch]$verbose)
+<# 
+.SYNOPSIS 
+    Standardise Photo and Video filenames and timestamps.
+.DESCRIPTION 
+    DateFix.ps1 accepts a folder from the user then works through the files (optionally recursing) to name them as consistently 
+    as possible using the yyyyMMdd_HHmmss.ext format.
+    
+    The scripts first tries to use the embedded Date Taken EXIF Date, if this is not available the file's current filename is 
+    used.
+.PARAMETER Path
+    The root folder to be processed, e.g. C:\Users\Username\Pictures\
+.PARAMETER Recurse
+    Whether or not to recurse through sub-directories of the root folder.
+.PARAMETER Verbose
+    Enables verbose output.
+.EXAMPLE
+    DateFix.ps1
+    Get asked for Path and whether to recurse or not.
+.EXAMPLE
+    DateFix.ps1 -Path C:\Users\Username\Pictures\
+    Process C:\Users\Username\Pictures\ and be asked whether to recurse or not.
+.EXAMPLE
+    DateFix.ps1 -Path C:\Users\Username\Pictures\ -Recurse $true
+    Recursively Process C:\Users\Username\Pictures\ with minimal output.
+.EXAMPLE
+    DateFix.ps1 -Path C:\Users\Username\Pictures\ -Recurse $false
+    Process C:\Users\Username\Pictures\ without recursing with minimal output.
+.EXAMPLE
+    DateFix.ps1 -Path C:\Users\Username\Pictures\ -Recurse $true -Verbose
+    Recursively Process C:\Users\Username\Pictures\ with verbose output.
+.NOTES 
+    Author  : Joe Pitt
+    License : DateFix by Joe Pitt is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International 
+    License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
+.LINK 
+    https://www.joepitt.co.uk/Project/DateFix/
+#>
+param ([string]$Path, [bool]$Recurse, [switch]$Verbose)
+
+
 $oldverbose = $VerbosePreference
-if($verbose) 
+if($Verbose) 
 {
 	$VerbosePreference = "continue" 
 }
@@ -70,23 +109,53 @@ Function Set-FileTimeStamps
 $origDir = $(Get-Location)
 Write-Verbose "Original Location $origDir"
 
-Set-Location (Get-Directory)
-
-$title = "$(Get-Location)"
-Write-Verbose "Location set to $title"
-$message = "Process all sub-folders too?"
-$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes","Process all sub-folders."
-$no = New-Object System.Management.Automation.Host.ChoiceDescription "&No","Process only the selected folder."
-$cancel = New-Object System.Management.Automation.Host.ChoiceDescription "&Cancel","Do not process any folders."
-$options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no, $cancel)
-$result = $host.ui.PromptForChoice($title, $message, $options, 1)
-switch ($result) 
+# Get and Test path
+if(!$PSBoundParameters.ContainsKey('Path'))
 {
-	0 { $files = Get-ChildItem -Recurse -File; Write-Verbose "Recursive Mode Enabled" }
-	1 { $files = Get-ChildItem -File }
-	2 { Set-Location $origDir; Write-Verbose "Aborted"; exit }
+    $Path = Get-Directory
+}
+if (Test-Path "$Path")
+{
+    Set-Location "$Path"
+    Write-Verbose "Using '$Path'"
+}
+else
+{
+    Write-Error -Message "Path does not exist." -RecommendedAction "Check path and try again" -ErrorId "1" `
+        -Category ObjectNotFound -CategoryActivity "Testing Path Exists" -CategoryReason "The Path was not found" `
+        -CategoryTargetName "$Path" -CategoryTargetType "Directory"
+    exit 1
 }
 
+# Get answer to Recurse
+if(!$PSBoundParameters.ContainsKey('Recurse'))
+{
+    $message = "Process all sub-folders too?"
+    $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes","Process all sub-folders."
+    $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No","Process only the selected folder."
+    $cancel = New-Object System.Management.Automation.Host.ChoiceDescription "&Cancel","Do not process any folders."
+    $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no, $cancel)
+    $result = $host.ui.PromptForChoice($title, $message, $options, 1)
+    switch ($result) 
+    {
+	    0 { $Recurse = $true }
+        1 { $Recurse = $false }
+        2 { Set-Location $origDir; Exit 2 }
+    }
+}
+
+# Get Files
+if ($Recurse)
+{
+    $files = Get-ChildItem -Recurse -File
+    Write-Verbose "Recursive Mode Enabled"
+}
+else
+{
+	$files = Get-ChildItem -File
+}
+
+# Process Files
 foreach ($file in $files)
 {
 	Write-Verbose $file.FullName
