@@ -41,8 +41,8 @@ if($Verbose)
 	$VerbosePreference = "continue" 
 }
 
-[Reflection.Assembly]::LoadFile('C:\Windows\Microsoft.NET\Framework64\v4.0.30319\System.Drawing.dll') | Out-Null
 [System.Reflection.Assembly]::LoadWithPartialName("System.windows.forms") | Out-Null
+[System.Reflection.Assembly]::LoadWithPartialName("System.Drawing") | Out-Null
 
 # Get the directory to be processed.
 function Get-Directory()
@@ -412,7 +412,9 @@ foreach ($file in $files)
 			# UNKNOWN FORMAT
 			default
 			{
-				Write-Host "Unable to determine timestamp for $($File.FullName)" -ForegroundColor Red
+                Write-Error -Message "Unable to determine timestamp" -Category ParserError -ErrorId 1 -TargetObject $file.FullName `
+                    -RecommendedAction "Manually Rename the file" -CategoryActivity "Detect new filename" `
+                    -CategoryReason "EXIF Not Found and No Pattern Match" -CategoryTargetType "File"
 				$NewName = "FAIL"
 				break
 			}
@@ -445,7 +447,7 @@ foreach ($file in $files)
 
 			if ($file.Name -ne $Test) 
 			{
-				Write-Host "Renaming $($file.FullName) to $NewName$ext" -ForegroundColor Yellow
+				Write-Host "  Renaming $($file.FullName) to $NewName$ext"
 				Rename-Item -path $File.Name -newName "$NewName$ext"
 			}
 		}
@@ -458,4 +460,3 @@ foreach ($file in $files)
 Set-Location $origDir
 Write-Verbose "Restored to $origDir"
 $VerbosePreference = $oldverbose
-
