@@ -8,7 +8,7 @@
 .PARAMETER Path
     The root folder to be processed, e.g. C:\Users\Username\Pictures\
 .PARAMETER Recurse
-    Whether or not to recurse through sub-directories of the root folder.
+    Enables recursing through sub-directories of the root folder.
 .PARAMETER Verbose
     Enables verbose output.
 .EXAMPLE
@@ -16,23 +16,21 @@
     Get asked for Path and whether to recurse or not.
 .EXAMPLE
     DateFix.ps1 -Path C:\Users\Username\Pictures\
-    Process C:\Users\Username\Pictures\ and be asked whether to recurse or not.
+    Process C:\Users\Username\Pictures\ only.
 .EXAMPLE
-    DateFix.ps1 -Path C:\Users\Username\Pictures\ -Recurse $true
-    Recursively Process C:\Users\Username\Pictures\ with minimal output.
+    DateFix.ps1 -Path C:\Users\Username\Pictures\ -Recurse
+    Recursively Process C:\Users\Username\Pictures\.
 .EXAMPLE
-    DateFix.ps1 -Path C:\Users\Username\Pictures\ -Recurse $false
-    Process C:\Users\Username\Pictures\ without recursing with minimal output.
-.EXAMPLE
-    DateFix.ps1 -Path C:\Users\Username\Pictures\ -Recurse $true -Verbose
+    DateFix.ps1 -Path C:\Users\Username\Pictures\ -Recurse -Verbose
     Recursively Process C:\Users\Username\Pictures\ with verbose output.
 .NOTES 
     Author  : Joe Pitt
+    Version : v1.3 (2017-01-17)
     License : DateFix by Joe Pitt is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 .LINK 
     https://www.joepitt.co.uk/Project/DateFix/
 #>
-param ([string]$Path, [bool]$Recurse, [switch]$Verbose)
+param ([string]$Path, [switch]$Recurse, [switch]$Verbose)
 
 
 $oldverbose = $VerbosePreference
@@ -107,26 +105,37 @@ $origDir = $(Get-Location)
 Write-Verbose "Original Location $origDir"
 
 # Get and Test path
-if(!$PSBoundParameters.ContainsKey('Path'))
+if($PSBoundParameters.ContainsKey('Path'))
 {
-    $Path = Get-Directory
-}
-if (Test-Path "$Path")
-{
-    Set-Location "$Path"
-    Write-Verbose "Using '$Path'"
+    if (Test-Path "$Path")
+    {
+        Set-Location "$Path"
+        Write-Verbose "Using '$Path'"
+    }
+    else
+    {
+        Write-Error -Message "Path does not exist." -RecommendedAction "Check path and try again" -ErrorId "1" `
+            -Category ObjectNotFound -CategoryActivity "Testing Path Exists" -CategoryReason "The Path was not found" `
+            -CategoryTargetName "$Path" -CategoryTargetType "Directory"
+        exit 1
+    }
 }
 else
 {
-    Write-Error -Message "Path does not exist." -RecommendedAction "Check path and try again" -ErrorId "1" `
-        -Category ObjectNotFound -CategoryActivity "Testing Path Exists" -CategoryReason "The Path was not found" `
-        -CategoryTargetName "$Path" -CategoryTargetType "Directory"
-    exit 1
-}
+    $Path = Get-Directory
+    if (Test-Path "$Path")
+    {
+        Set-Location "$Path"
+        Write-Verbose "Using '$Path'"
+    }
+    else
+    {
+        Write-Error -Message "Path does not exist." -RecommendedAction "Check path and try again" -ErrorId "1" `
+            -Category ObjectNotFound -CategoryActivity "Testing Path Exists" -CategoryReason "The Path was not found" `
+            -CategoryTargetName "$Path" -CategoryTargetType "Directory"
+        exit 1
+    }
 
-# Get answer to Recurse
-if(!$PSBoundParameters.ContainsKey('Recurse'))
-{
     $message = "Process all sub-folders too?"
     $yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes","Process all sub-folders."
     $no = New-Object System.Management.Automation.Host.ChoiceDescription "&No","Process only the selected folder."
@@ -158,7 +167,7 @@ foreach ($file in $files)
 	Write-Verbose $file.FullName
 	Set-Location $file.DirectoryName
 	$NewName = $file.Name.Substring(0, $file.Name.LastIndexOf('.'))
-	$ext = $file.Name.Substring($file.Name.LastIndexOf('.'))
+	$Extension = $file.Name.Substring($file.Name.LastIndexOf('.'))
 
     ## Detect DateTime
 
@@ -412,7 +421,7 @@ foreach ($file in $files)
 			# UNKNOWN FORMAT
 			default
 			{
-                Write-Error -Message "Unable to determine timestamp" -Category ParserError -ErrorId 1 -TargetObject $file.FullName `
+                Write-Error -Message "Unable to determine timestamp" -Category ParserError -ErrorId 2 -TargetObject $file.FullName `
                     -RecommendedAction "Manually Rename the file" -CategoryActivity "Detect new filename" `
                     -CategoryReason "EXIF Not Found and No Pattern Match" -CategoryTargetType "File"
 				$NewName = "FAIL"
@@ -423,19 +432,19 @@ foreach ($file in $files)
 
 	if ($NewName -ne "FAIL")
 	{
-		$Test = $NewName + $ext
+		$Test = $NewName + $Extension
 		if ($file.Name -ne $Test) 
 		{
 			if (Test-Path $Test) 
 			{
 				$i = 1
-				$Test = $NewName + "-" + $i + $ext
+				$Test = $NewName + "-" + $i + $Extension
 				if ($file.Name -ne $Test)
 				{
 					while (Test-Path $Test) 
 					{
 						$i++
-						$Test = $NewName + "-" + $i + $ext
+						$Test = $NewName + "-" + $i + $Extension
 						if ($file.Name -eq $Test) 
 						{
 							break
@@ -447,14 +456,14 @@ foreach ($file in $files)
 
 			if ($file.Name -ne $Test) 
 			{
-				Write-Host "  Renaming $($file.FullName) to $NewName$ext"
-				Rename-Item -path $File.Name -newName "$NewName$ext"
+				Write-Host "  Renaming $($file.FullName) to $NewName$Extension"
+				Rename-Item -path $File.Name -newName "$NewName$Extension"
 			}
 		}
 		Write-Verbose "  Setting Timestamps..."
         $TimeStampStr = $NewName.Substring(0, 4) + "-" + $NewName.Substring(4, 2) + "-" + $NewName.Substring(6, 2) + " " + $NewName.Substring(9, 2) + ":" + $NewName.Substring(11, 2) + ":" + $NewName.Substring(13, 2)
 		$TimeStamp = [datetime]$TimeStampStr
-		Set-FileTimeStamps "$NewName$ext" $TimeStamp
+		Set-FileTimeStamps "$NewName$Extension" $TimeStamp
 	}
 }
 Set-Location $origDir
