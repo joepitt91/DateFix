@@ -25,7 +25,7 @@
     Recursively Process C:\Users\Username\Pictures\ with verbose output.
 .NOTES 
     Author  : Joe Pitt
-    Version : v1.3 (2017-01-17)
+    Version : v1.4 (2017-08-11)
     License : DateFix by Joe Pitt is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 .LINK 
     https://www.joepitt.co.uk/Project/DateFix/
@@ -414,6 +414,15 @@ foreach ($file in $files)
                 $Suffix = $NewName.Substring(20)
 				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2) + "-" + $Suffix.Substring(0, $Suffix.IndexOf(" ")) + "-" + $NewName.Substring($NewName.IndexOf("(") + 1)
                 $NewName = $NewName.Substring(0, $NewName.Length)
+				Write-Verbose "    > $NewName"
+                break
+			}
+			
+			# WhatsApp Image/Video yyyy-mm-dd at hh.mm.ss
+			'^WhatsApp (Image|Video) [0-9]{4}-[0-9]{2}-[0-9]{2} at [0-9]{2}.[0-9]{2}.[0-9]{2}$'
+			{
+				Write-Verbose "    Match: WhatsApp Image/Video yyyy-mm-dd at hh.mm.ss"
+				$NewName = $NewName.Substring(15,4) + $NewName.Substring(20,2) + $NewName.Substring(23,2) + "_" + $NewName.Substring(29,2) + $NewName.Substring(32,2) + $NewName.Substring(35,2)
 				Write-Verbose "    > $NewName"
                 break
 			}
