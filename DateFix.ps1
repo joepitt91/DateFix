@@ -191,6 +191,15 @@ foreach ($file in $files)
                 break
             }
 
+            # yyyymmdd-hhmss
+            '^[0-9]{8}-[0-9]{6}$'
+            {
+                Write-Verbose "  Match: yyyymmdd-hhmmss"
+                $NewName = $NewName.Replace('-', '_')
+                Write-Verbose "    > $NewName"
+                break
+            }
+
 			# yyyyddmm_hhmmss_n
 			'^[0-9]{8}_[0-9]{6}_[^/\\?%*:|"<>. ]+$'
 			{
