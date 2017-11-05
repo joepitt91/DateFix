@@ -184,10 +184,10 @@ foreach ($file in $files)
 		Write-Verbose "  EXIF Date Taken not found, trying RegEx"
 		switch -Regex ($NewName)
 		{
-            # Preferred Format yyyyddmm_hhmmss or yyyyddmm_hhmmss-FreeText
+            # Preferred Format yyyymmdd_hhmmss or yyyymmdd_hhmmss-FreeText
             '^[0-9]{8}_[0-9]{6}(-[^/\\?%*:|"<>. ]+)?$'
             {
-                Write-Verbose "  Match: yyyyddmm_hhmmss or yyyyddmm_hhmmss-FreeText (Preferred)"
+                Write-Verbose "  Match: yyyymmdd_hhmmss or yyyymmdd_hhmmss-FreeText (Preferred)"
                 break
             }
 
@@ -200,10 +200,10 @@ foreach ($file in $files)
                 break
             }
 
-			# yyyyddmm_hhmmss_n
+			# yyyymmdd_hhmmss_n
 			'^[0-9]{8}_[0-9]{6}_[^/\\?%*:|"<>. ]+$'
 			{
-				Write-Verbose "  Match: yyyyddmm_hhmmss_n"
+				Write-Verbose "  Match: yyyymmdd_hhmmss_n"
                 $NewName = $NewName.Substring(0, 15) + "-" + $NewName.Substring(16)
                 Write-Verbose "    > $NewName"
                 break
