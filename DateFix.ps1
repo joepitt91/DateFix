@@ -9,6 +9,8 @@
     The root folder to be processed, e.g. C:\Users\Username\Pictures\
 .PARAMETER Recurse
     Enables recursing through sub-directories of the root folder.
+.PARAMETER DateModifiedFallback
+    Falls back to the files Date Modified value if EXIF and pattern matching fails.
 .PARAMETER Verbose
     Enables verbose output.
 .EXAMPLE
@@ -25,12 +27,12 @@
     Recursively Process C:\Users\Username\Pictures\ with verbose output.
 .NOTES 
     Author  : Joe Pitt
-    Version : v1.4 (2017-08-11)
+    Version : v1.5 (2017-11-05)
     License : DateFix by Joe Pitt is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 .LINK 
     https://www.joepitt.co.uk/Project/DateFix/
 #>
-param ([string]$Path, [switch]$Recurse, [switch]$Verbose)
+param ([string]$Path, [switch]$Recurse, [switch]$DateModifiedFallback, [switch]$Verbose)
 
 
 $oldverbose = $VerbosePreference
@@ -439,10 +441,19 @@ foreach ($file in $files)
 			# UNKNOWN FORMAT
 			default
 			{
-                Write-Error -Message "Unable to determine timestamp" -Category ParserError -ErrorId 2 -TargetObject $file.FullName `
-                    -RecommendedAction "Manually Rename the file" -CategoryActivity "Detect new filename" `
-                    -CategoryReason "EXIF Not Found and No Pattern Match" -CategoryTargetType "File"
-				$NewName = "FAIL"
+                if ($DateModifiedFallback)
+                {
+                    Write-Verbose "    Unable to determine timestamp, falling back to Date Modified."
+                    $NewName = $file.LastWriteTime.ToString("yyyyMMdd-HHmmss")
+                    Write-Verbose "    > $NewName"
+                }
+                else
+                {
+                    Write-Error -Message "Unable to determine timestamp" -Category ParserError -ErrorId 2 -TargetObject $file.FullName `
+                        -RecommendedAction "Manually Rename the file" -CategoryActivity "Detect new filename" `
+                        -CategoryReason "EXIF Not Found and No Pattern Match" -CategoryTargetType "File"
+				    $NewName = "FAIL"
+                }
 				break
 			}
 		}
