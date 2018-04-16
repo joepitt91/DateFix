@@ -1,9 +1,9 @@
 # DateFix
 **Standardise Photo and Video filenames and timestamps.**
 
-DateFix.ps1 accepts a folder from the user then works through the files (optionally recursing) to name them as consistently as possible using the yyyyMMdd_HHmmss.ext format.
+DateFix.ps1 accepts a folder from the user then works through the files (optionally recursively) to name them as consistently as possible using the yyyyMMdd_HHmmss.ext format.
 
-The scripts first tries to use the embedded Date Taken EXIF Date, if this is not available the file's current filename is  used.
+The script first tries to use the embedded Date Taken EXIF Date, if this is not available the file's current filename is used.
 
 ## Usage:
 
@@ -12,7 +12,7 @@ The scripts first tries to use the embedded Date Taken EXIF Date, if this is not
 3. Run
 
 
-        DateFix.ps1 [[-Path] <String>] [-Recurse] [-Verbose]
+        DateFix.ps1 [[-Path] <String>] [-Recurse] [-DateModifiedFallback] [-Verbose]
 4. If -Path was not provided, then select the target folder, and decide whether to recuse or not
 6. Check the results are as expected
 5. Delete the backup of the target folder
@@ -21,4 +21,5 @@ The scripts first tries to use the embedded Date Taken EXIF Date, if this is not
 
 * **-Path**    The root folder to be processed, e.g. C:\Users\Username\Pictures\
 * **-Recurse** Recurse through sub-directories of the root folder.
+* **-DateModifiedFallback** Use file's Date Modified time if EXIF and Pattern Matching fails.
 * **-Verbose** Enables verbose output.
