@@ -27,7 +27,7 @@
     Recursively Process C:\Users\Username\Pictures\ with verbose output.
 .NOTES 
     Author  : Joe Pitt
-    Version : v1.5 (2017-11-05)
+    Version : v1.6 (2018-04-16)
     License : DateFix by Joe Pitt is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 .LINK 
     https://www.joepitt.co.uk/Project/DateFix/
