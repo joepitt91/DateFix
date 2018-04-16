@@ -190,11 +190,13 @@ foreach ($file in $files)
                 $FreeText = $NewName.Substring($NewName.IndexOf('-') + 1)
                 $NewName = "$EXIFDate-$FreeText"
                 Write-Verbose "  Using EXIF Date Taken - Keeping free text"
+                Write-Verbose "    > $NewName"
             }
             else
             {
                 $NewName = $EXIFDate
 		        Write-Verbose "  Using EXIF Date Taken"
+                Write-Verbose "    > $NewName"
             }
         }
 	}
