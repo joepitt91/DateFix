@@ -456,6 +456,15 @@ foreach ($file in $files)
                 break
 			}
 
+            # FIH_yyyyMMdd_HHmmss
+            '^FIH_[0-9]{8}_[0-9]{6}$'
+            {
+                Write-Verbose "  Match: FIH_yyyyMMdd_HHmmss"
+				$NewName = $NewName.Substring(4)
+                Write-Verbose "    > $NewName"
+                break
+            }
+
 			# UNKNOWN FORMAT
 			default
 			{
