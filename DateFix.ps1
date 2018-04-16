@@ -177,8 +177,26 @@ foreach ($file in $files)
 	$EXIFDate = Get-EXIFDate $file.FullName
 	if ($EXIFDate -ne $null)
 	{
-		$NewName = $EXIFDate
-		Write-Verbose "  Using EXIF Date Taken"
+        # Check if filename is already compliant
+        if ($NewName -match "^$EXIFDate(-[^/\\?%*:|`"<>. ]+)?$")
+        {
+            Write-Verbose "  Using EXIF Date Taken - Name already compliant"
+        }
+        else
+        {
+            # Check if filename is compliant, with free text, but with wrong timestamp
+            if ($NewName -match '^[0-9]{8}_[0-9]{6}-[^/\\?%*:|"<>. ]+$')
+            {
+                $FreeText = $NewName.Substring($NewName.IndexOf('-') + 1)
+                $NewName = "$EXIFDate-$FreeText"
+                Write-Verbose "  Using EXIF Date Taken - Keeping free text"
+            }
+            else
+            {
+                $NewName = $EXIFDate
+		        Write-Verbose "  Using EXIF Date Taken"
+            }
+        }
 	}
     # Filename Fallback
 	else
