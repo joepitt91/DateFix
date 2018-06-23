@@ -11,6 +11,8 @@
     Enables recursing through sub-directories of the root folder.
 .PARAMETER DateModifiedFallback
     Falls back to the files Date Modified value if EXIF and pattern matching fails.
+.PARAMETER DryRun
+    Run DateFix without writing any changes - outputs all changes that would be made.
 .PARAMETER Verbose
     Enables verbose output.
 .EXAMPLE
@@ -25,14 +27,20 @@
 .EXAMPLE
     DateFix.ps1 -Path C:\Users\Username\Pictures\ -Recurse -Verbose
     Recursively Process C:\Users\Username\Pictures\ with verbose output.
+.EXAMPLE
+    DateFix.ps1 -Path C:\Users\Username\Pictures\ -DryRun
+    Process C:\Users\Username\Pictures\ only, without making any changes, showing which files would be renamed.
+.EXAMPLE
+    DateFix.ps1 -Path C:\Users\Username\Pictures\ -DryRun -Verbose
+    Process C:\Users\Username\Pictures\ only, without making any changes, showing which files would be renamed and what timestamps would be set.
 .NOTES 
     Author  : Joe Pitt
-    Version : v1.6 (2018-04-16)
+    Version : v1.7 (2018-06-23)
     License : DateFix by Joe Pitt is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 .LINK 
     https://www.joepitt.co.uk/Project/DateFix/
 #>
-param ([string]$Path, [switch]$Recurse, [switch]$DateModifiedFallback, [switch]$Verbose)
+param ([string]$Path, [switch]$Recurse, [switch]$DateModifiedFallback, [switch]$DryRun, [switch]$Verbose)
 
 
 $oldverbose = $VerbosePreference
@@ -514,14 +522,28 @@ foreach ($file in $files)
 
 			if ($file.Name -ne $Test) 
 			{
-				Write-Host "  Renaming $($file.FullName) to $NewName$Extension"
-				Rename-Item -path $File.Name -newName "$NewName$Extension"
+                if ($DryRun)
+                {
+				    Write-Warning "  [Dry Run] Would rename $($file.FullName) to $NewName$Extension"
+                }
+                else
+                {
+                    Write-Host "  Renaming $($file.FullName) to $NewName$Extension"
+				    Rename-Item -path $File.Name -newName "$NewName$Extension"
+                }
 			}
 		}
-		Write-Verbose "  Setting Timestamps..."
         $TimeStampStr = $NewName.Substring(0, 4) + "-" + $NewName.Substring(4, 2) + "-" + $NewName.Substring(6, 2) + " " + $NewName.Substring(9, 2) + ":" + $NewName.Substring(11, 2) + ":" + $NewName.Substring(13, 2)
-		$TimeStamp = [datetime]$TimeStampStr
-		Set-FileTimeStamps "$NewName$Extension" $TimeStamp
+        if ($DryRun)
+        {
+            Write-Verbose "  [Dry Run] Would set timestamps on $NewName$Extension to $TimeStampStr"
+        }
+        else
+        {
+            Write-Verbose "  Setting Timestamps..."
+		    $TimeStamp = [datetime]$TimeStampStr
+		    Set-FileTimeStamps "$NewName$Extension" $TimeStamp
+        }
 	}
 }
 Set-Location $origDir
