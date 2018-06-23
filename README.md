@@ -22,4 +22,5 @@ The script first tries to use the embedded Date Taken EXIF Date, if this is not 
 * **-Path**    The root folder to be processed, e.g. C:\Users\Username\Pictures\
 * **-Recurse** Recurse through sub-directories of the root folder.
 * **-DateModifiedFallback** Use file's Date Modified time if EXIF and Pattern Matching fails.
+* **-DryRun** Run DateFix without writing any changes - outputs all changes that would be made.
 * **-Verbose** Enables verbose output.
