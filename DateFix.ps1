@@ -481,7 +481,7 @@ foreach ($file in $files)
                 if ($DateModifiedFallback)
                 {
                     Write-Verbose "    Unable to determine timestamp, falling back to Date Modified."
-                    $NewName = $file.LastWriteTime.ToString("yyyyMMdd-HHmmss")
+                    $NewName = $file.LastWriteTime.ToString("yyyyMMdd_HHmmss")
                     Write-Verbose "    > $NewName"
                 }
                 else
