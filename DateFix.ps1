@@ -35,7 +35,7 @@
     Process C:\Users\Username\Pictures\ only, without making any changes, showing which files would be renamed and what timestamps would be set.
 .NOTES 
     Author  : Joe Pitt
-    Version : v1.7 (2018-06-23)
+    Version : v1.8 (2018-06-29)
     License : DateFix by Joe Pitt is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
 .LINK 
     https://www.joepitt.co.uk/Project/DateFix/
