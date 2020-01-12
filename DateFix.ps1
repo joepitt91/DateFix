@@ -105,9 +105,18 @@ Function Set-FileTimeStamps
 	param ( [Parameter(mandatory=$true)] [string[]]$path, [datetime]$date = (Get-Date) )
 	Get-ChildItem -Path $path |
 	ForEach-Object {
-		$_.CreationTime = $date
-		$_.LastAccessTime = $date
-		$_.LastWriteTime = $date 
+		if ($_.CreationTime -ne $date) {
+			Write-Verbose "  Setting Creation Time..."
+			$_.CreationTime = $date
+		}
+		if ($_.LastWriteTime -ne $date) {
+			Write-Verbose "  Setting Modified Time..."
+			$_.LastWriteTime = $date
+		}
+		if ($_.LastAccessTime -ne $date) {
+			Write-Verbose "  Setting Last Accessed Time..."
+			$_.LastAccessTime = $date
+		}
    }
 }
 
@@ -540,7 +549,6 @@ foreach ($file in $files)
         }
         else
         {
-            Write-Verbose "  Setting Timestamps..."
 		    $TimeStamp = [datetime]$TimeStampStr
 		    Set-FileTimeStamps "$NewName$Extension" $TimeStamp
         }
