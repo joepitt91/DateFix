@@ -70,7 +70,7 @@ function Get-EXIFDate
 	{
 		$image = New-Object System.Drawing.Bitmap -ArgumentList $file
 		$takenData = Get-TakenData($image)
-		if ($takenData -eq $null) 
+		if ($null -eq $takenData) 
 		{
 			$image.Dispose()
 			return $null
@@ -192,7 +192,7 @@ foreach ($file in $files)
 
 	# EXIF (Preferred)
 	$EXIFDate = Get-EXIFDate $file.FullName
-	if ($EXIFDate -ne $null)
+	if ($null -ne $EXIFDate)
 	{
         # Check if filename is already compliant
         if ($NewName -match "^$EXIFDate(-[^/\\?%*:|`"<>. ]+)?$")
