@@ -35,8 +35,8 @@
     Process C:\Users\Username\Pictures\ only, without making any changes, showing which files would be renamed and what timestamps would be set.
 .NOTES 
     Author  : Joe Pitt
-    Version : v1.8 (2018-06-29)
-    License : DateFix by Joe Pitt is licensed under the Creative Commons Attribution-NonCommercial-ShareAlike 4.0 International License. To view a copy of this license, visit http://creativecommons.org/licenses/by-nc-sa/4.0/.
+    Version : v1.9.0 (2020-09-28)
+    License : This program is free software; you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation; either version 3 of the License, or(at your option) any later version.
 .LINK 
     https://www.joepitt.co.uk/Project/DateFix/
 #>
@@ -107,7 +107,7 @@ Function Set-FileTimeStamps {
 			Write-Verbose "  Setting Last Accessed Time..."
 			$_.LastAccessTime = $date
 		}
-   }
+	}
 }
 
 $origDir = $(Get-Location)
@@ -116,46 +116,46 @@ Write-Verbose "Original Location $origDir"
 # Get and Test path
 if ($PSBoundParameters.ContainsKey('Path')) {
 	if (Test-Path "$Path") {
-        Set-Location "$Path"
-        Write-Verbose "Using '$Path'"
-    }
+		Set-Location "$Path"
+		Write-Verbose "Using '$Path'"
+	}
 	else {
-        Write-Error -Message "Path does not exist." -RecommendedAction "Check path and try again" -ErrorId "1" `
-            -Category ObjectNotFound -CategoryActivity "Testing Path Exists" -CategoryReason "The Path was not found" `
-            -CategoryTargetName "$Path" -CategoryTargetType "Directory"
-        exit 1
-    }
+		Write-Error -Message "Path does not exist." -RecommendedAction "Check path and try again" -ErrorId "1" `
+			-Category ObjectNotFound -CategoryActivity "Testing Path Exists" -CategoryReason "The Path was not found" `
+			-CategoryTargetName "$Path" -CategoryTargetType "Directory"
+		exit 1
+	}
 }
 else {
-    $Path = Get-Directory
+	$Path = Get-Directory
 	if (Test-Path "$Path") {
-        Set-Location "$Path"
-        Write-Verbose "Using '$Path'"
-    }
+		Set-Location "$Path"
+		Write-Verbose "Using '$Path'"
+	}
 	else {
-        Write-Error -Message "Path does not exist." -RecommendedAction "Check path and try again" -ErrorId "1" `
-            -Category ObjectNotFound -CategoryActivity "Testing Path Exists" -CategoryReason "The Path was not found" `
-            -CategoryTargetName "$Path" -CategoryTargetType "Directory"
-        exit 1
-    }
+		Write-Error -Message "Path does not exist." -RecommendedAction "Check path and try again" -ErrorId "1" `
+			-Category ObjectNotFound -CategoryActivity "Testing Path Exists" -CategoryReason "The Path was not found" `
+			-CategoryTargetName "$Path" -CategoryTargetType "Directory"
+		exit 1
+	}
 
-    $message = "Process all sub-folders too?"
+	$message = "Process all sub-folders too?"
 	$yes = New-Object System.Management.Automation.Host.ChoiceDescription "&Yes", "Process all sub-folders."
 	$no = New-Object System.Management.Automation.Host.ChoiceDescription "&No", "Process only the selected folder."
 	$cancel = New-Object System.Management.Automation.Host.ChoiceDescription "&Cancel", "Do not process any folders."
-    $options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no, $cancel)
-    $result = $host.ui.PromptForChoice($title, $message, $options, 1)
+	$options = [System.Management.Automation.Host.ChoiceDescription[]]($yes, $no, $cancel)
+	$result = $host.ui.PromptForChoice($title, $message, $options, 1)
 	switch ($result) {
-	    0 { $Recurse = $true }
-        1 { $Recurse = $false }
-        2 { Set-Location $origDir; Exit 2 }
-    }
+		0 { $Recurse = $true }
+		1 { $Recurse = $false }
+		2 { Set-Location $origDir; Exit 2 }
+	}
 }
 
 # Get Files
 if ($Recurse) {
-    $files = Get-ChildItem -Recurse -File
-    Write-Verbose "Recursive Mode Enabled"
+	$files = Get-ChildItem -Recurse -File
+	Write-Verbose "Recursive Mode Enabled"
 }
 else {
 	$files = Get-ChildItem -File
@@ -168,70 +168,70 @@ foreach ($file in $files) {
 	$NewName = $file.Name.Substring(0, $file.Name.LastIndexOf('.'))
 	$Extension = $file.Name.Substring($file.Name.LastIndexOf('.'))
 
-    ## Detect DateTime
+	## Detect DateTime
 
 	# EXIF (Preferred)
 	$EXIFDate = Get-EXIFDate $file.FullName
 	if ($null -ne $EXIFDate) {
-        # Check if filename is already compliant
+		# Check if filename is already compliant
 		if ($NewName -match "^$EXIFDate(-[^/\\?%*:|`"<>. ]+)?$") {
-            Write-Verbose "  Using EXIF Date Taken - Name already compliant"
-        }
+			Write-Verbose "  Using EXIF Date Taken - Name already compliant"
+		}
 		else {
-            # Check if filename is compliant, with free text, but with wrong timestamp
+			# Check if filename is compliant, with free text, but with wrong timestamp
 			if ($NewName -match '^[0-9]{8}_[0-9]{6}-[^/\\?%*:|"<>. ]+$') {
-                $FreeText = $NewName.Substring($NewName.IndexOf('-') + 1)
-                $NewName = "$EXIFDate-$FreeText"
-                Write-Verbose "  Using EXIF Date Taken - Keeping free text"
-                Write-Verbose "    > $NewName"
-            }
+				$FreeText = $NewName.Substring($NewName.IndexOf('-') + 1)
+				$NewName = "$EXIFDate-$FreeText"
+				Write-Verbose "  Using EXIF Date Taken - Keeping free text"
+				Write-Verbose "    > $NewName"
+			}
 			else {
-                $NewName = $EXIFDate
-		        Write-Verbose "  Using EXIF Date Taken"
-                Write-Verbose "    > $NewName"
-            }
-        }
+				$NewName = $EXIFDate
+				Write-Verbose "  Using EXIF Date Taken"
+				Write-Verbose "    > $NewName"
+			}
+		}
 	}
-    # Filename Fallback
+	# Filename Fallback
 	else {
 		Write-Verbose "  EXIF Date Taken not found, trying RegEx"
 		switch -Regex ($NewName) {
-            # Preferred Format yyyymmdd_hhmmss or yyyymmdd_hhmmss-FreeText
+			# Preferred Format yyyymmdd_hhmmss or yyyymmdd_hhmmss-FreeText
 			'^[0-9]{8}_[0-9]{6}(-[^/\\?%*:|"<>. ]+)?$' {
-                Write-Verbose "  Match: yyyymmdd_hhmmss or yyyymmdd_hhmmss-FreeText (Preferred)"
-                break
-            }
+				Write-Verbose "  Match: yyyymmdd_hhmmss or yyyymmdd_hhmmss-FreeText (Preferred)"
+				break
+			}
 
-            # yyyymmdd-hhmss
+			# yyyymmdd-hhmss
 			'^[0-9]{8}-[0-9]{6}$' {
-                Write-Verbose "  Match: yyyymmdd-hhmmss"
-                $NewName = $NewName.Replace('-', '_')
-                Write-Verbose "    > $NewName"
-                break
-            }
+				Write-Verbose "  Match: yyyymmdd-hhmmss"
+				$NewName = $NewName.Replace('-', '_')
+				Write-Verbose "    > $NewName"
+				break
+			}
 
 			# yyyymmdd_hhmmss_n
 			'^[0-9]{8}_[0-9]{6}_[^/\\?%*:|"<>. ]+$' {
 				Write-Verbose "  Match: yyyymmdd_hhmmss_n"
-                $NewName = $NewName.Substring(0, 15) + "-" + $NewName.Substring(16)
-                Write-Verbose "    > $NewName"
-                break
+				$NewName = $NewName.Substring(0, 15) + "-" + $NewName.Substring(16)
+				Write-Verbose "    > $NewName"
+				break
 			}
 
 			# IMG_yyyymmdd_hhmmss or IMG_yyyymmdd_hhmmss~x
 			'^IMG_[0-9]{8}_[0-9]{6}(~[0-9]+)$' {
 				Write-Verbose "  Match: IMG_yyyymmdd_hhmmss"
-                $NewName = $NewName.Substring(4)
-                Write-Verbose "    > $NewName"
-                break
+				$NewName = $NewName.Substring(4)
+				Write-Verbose "    > $NewName"
+				break
 			}
 
 			# IMG-yyyymmdd-WAnnnn
 			'^IMG-[0-9]{8}-WA[0-9]{4}$' {
 				Write-Verbose "  Match: IMG-yyyymmdd-WAnnnn"
-                $NewName = "$($NewName.Substring(4, 8))_000000"
+				$NewName = "$($NewName.Substring(4, 8))_000000"
 				Write-Verbose "    > $NewName"
-                break
+				break
 			}
 
 			# Photo dd-mm-yyyy hh mm ss
@@ -239,83 +239,83 @@ foreach ($file in $files) {
 				Write-Verbose "  Match: Photo dd-mm-yyyy hh mm ss"
 				$NewName = $NewName.Substring(6)
 				$NewName = $NewName.Substring(6, 4) + $NewName.Substring(3, 2) + $NewName.Substring(0, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2)
-                Write-Verbose "    > $NewName"
-                break
+				Write-Verbose "    > $NewName"
+				break
 			}
 
 			# Desktop dd.mm.yyyy - hh.mm.ss.xx
 			'^Desktop [0-9]{2}\.[0-9]{2}\.[0-9]{4} - [0-9]{2}\.[0-9]{2}\.[0-9]{2}(\.[0-9]{2})*$' {
 				Write-Verbose "  Match: Desktop dd.mm.yyyy - hh.mm.ss.x"
-                $NewName = $NewName.Split(8)
+				$NewName = $NewName.Split(8)
 				$NewName = $NewName.Substring(6, 4) + $NewName.Substring(3, 2) + $NewName.Substring(0, 2) + "_" + $NewName.Substring(13, 2) + $NewName.Substring(16, 2) + $NewName.Substring(19, 2) + "-" + $NewName.Substring(22)
-                Write-Verbose "    > $NewName"
-                break
+				Write-Verbose "    > $NewName"
+				break
 			}
 
 			# download_yyyymmdd_hhmmss
 			'^download_[0-9]{8}_[0-9]{6}$' {
 				Write-Verbose "  Match: download_yyyymmdd_hhmmss"
-                $NewName = $NewName.Substring(9)
-                Write-Verbose "    > $NewName"
-                break
+				$NewName = $NewName.Substring(9)
+				Write-Verbose "    > $NewName"
+				break
 			}
 
-            # image_yyyymmdd_hhmmss
+			# image_yyyymmdd_hhmmss
 			'^image_[0-9]{8}_[0-9]{6}$' {
 				Write-Verbose "  Match: download_yyyymmdd_hhmmss"
-                $NewName = $NewName.Substring(6)
-                Write-Verbose "    > $NewName"
-                break
+				$NewName = $NewName.Substring(6)
+				Write-Verbose "    > $NewName"
+				break
 			}
 
-            # Screenshot_yyyymmdd-hhmmss
+			# Screenshot_yyyymmdd-hhmmss
 			'^Screenshot_[0-9]{8}-[0-9]{6}$' {
-                Write-Verbose "  Match: Screenshot_yyyymmdd-hhmmss"
-                $NewName = $NewName.Substring(11, 8) + "_" + $NewName.Substring(20, 6)
-                Write-Verbose "    > $NewName"
-                break
-            }
+				Write-Verbose "  Match: Screenshot_yyyymmdd-hhmmss"
+				$NewName = $NewName.Substring(11, 8) + "_" + $NewName.Substring(20, 6)
+				Write-Verbose "    > $NewName"
+				break
+			}
 
 			# yyyy-mm-dd
 			'^[0-9]{4}-[0-9]{2}-[0-9]{2}( \([0-9]+\))$' {
 				Write-Verbose "  Match: yyyy-mm-dd"
-                $NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_000000"
+				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_000000"
 				Write-Verbose "    > $NewName"
-                break
+				break
 			}
 
 			# yyyy-mm-dd hh mm
 			'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2} [0-9]{2}$' {
 				Write-Verbose "  Match: yyyy-mm-dd hh mm"
 				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + "00"
-                Write-Verbose "    > $NewName"
-                break
+				Write-Verbose "    > $NewName"
+				break
 			}
 
 			# Screenshot yyyy-mm-dd hh.mm.ss
 			'^Screenshot [0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2}\.[0-9]{2}\.[0-9]{2}$' {
 				Write-Verbose "  Match: Screenshot yyyy-mm-dd hh.mm.ss"
-                $NewName = $NewName.Substring(11)
-                $NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2)
+				$NewName = $NewName.Substring(11)
+				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2)
 				Write-Verbose "    > $NewName"
-                break
+				break
 			}
 
 			# Screenshot_yyyy-mm-dd-hh-mm-ss
 			'^Screenshot_[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}$' {
 				Write-Verbose "  Match: Screenshot_yyyy-mm-dd-hh-mm-ss"
 				$NewName = $NewName.Substring(11)
-                $NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2)
+				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2)
 				Write-Verbose "    > $NewName"
-                break
+				break
 			}
 
 			# VID_yyyymmdd_hhmmss
 			'^VID_[0-9]{8}_[0-9]{6}$' {
 				Write-Verbose "  Match: VID_yyyymmdd_hhmmss"
 				$NewName = $NewName.Substring(4)
-                Write-Verbose "    > $NewName"
-                break
+				Write-Verbose "    > $NewName"
+				break
 			}
 
 			# yyyy-mm-dd_xxxxx
@@ -323,7 +323,7 @@ foreach ($file in $files) {
 				Write-Verbose "  Match: yyyy-mm-dd_xxxxx"
 				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_000000"
 				Write-Verbose "    > $NewName"
-                break
+				break
 			}
 
 			# yyyy-mm-dd hh mm ss
@@ -331,7 +331,7 @@ foreach ($file in $files) {
 				Write-Verbose "  Match: yyyy-mm-dd hh mm ss"
 				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2)
 				Write-Verbose "    > $NewName"
-                break
+				break
 			}
 
 			# yyyy-mm-dd hh mm ss (x)
@@ -339,7 +339,7 @@ foreach ($file in $files) {
 				Write-Verbose "  Match: yyyy-mm-dd hh mm ss (x)"
 				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2)
 				Write-Verbose "    > $NewName"
-                break
+				break
 			}
 
 			# yyyy-mm-dd hh mm ss_x
@@ -347,34 +347,34 @@ foreach ($file in $files) {
 				Write-Verbose "  Match: yyyy-mm-dd hh mm ss_x"
 				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2)
 				Write-Verbose "    > $NewName"
-                break
+				break
 			}
 
 			# yyyy-mm-dd hh mm ss (xxx)
 			'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2} [0-9]{2} [0-9]{2} \(([a-zA-Z0-9+ ])+\)$' {
 				Write-Verbose "  Match: yyyy-mm-dd hh mm ss (xxx)"
 				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2) + "-" + $NewName.Substring(21)
-                $NewName = $NewName.Substring(0, $NewName.Length)
+				$NewName = $NewName.Substring(0, $NewName.Length)
 				Write-Verbose "    > $NewName"
-                break
+				break
 			}
 
-            # yyyy-mm-dd hh mm ss_x (xxx)
+			# yyyy-mm-dd hh mm ss_x (xxx)
 			'^[0-9]{4}-[0-9]{2}-[0-9]{2} [0-9]{2} [0-9]{2} [0-9]{2}_[0-9]+ \(([a-zA-Z0-9+ ])+\)$' {
 				Write-Verbose "  Match: yyyy-mm-dd hh mm ss_x (xxx)"
-                $Suffix = $NewName.Substring(20)
+				$Suffix = $NewName.Substring(20)
 				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2) + "-" + $Suffix.Substring(0, $Suffix.IndexOf("(") - 2) + "-" + $NewName.Substring($NewName.IndexOf("(") + 1)
-                $NewName = $NewName.Substring(0, $NewName.Length)
+				$NewName = $NewName.Substring(0, $NewName.Length)
 				Write-Verbose "    > $NewName"
-                break
+				break
 			}
 
-            # yyyy-mm-dd-hh-mm-ss
+			# yyyy-mm-dd-hh-mm-ss
 			'^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}$' {
 				Write-Verbose "  Match: yyyy-mm-dd hh mm ss"
 				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2)
 				Write-Verbose "    > $NewName"
-                break
+				break
 			}
 
 			# yyyy-mm-dd-hh-mm-ss_x
@@ -382,35 +382,35 @@ foreach ($file in $files) {
 				Write-Verbose "  Match: yyyy-mm-dd hh mm ss_x"
 				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2)
 				Write-Verbose "    > $NewName"
-                break
+				break
 			}
 
 			# yyyy-mm-dd-hh-mm-ss (xxx)
 			'^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}(_([0-9])+){0,1} \(([a-zA-Z0-9+ ])+\)$' {
 				Write-Verbose "  Match: yyyy-mm-dd hh mm ss (xxx)"
 				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2) + "-" + $NewName.Substring(21)
-                $NewName = $NewName.Substring(0, $NewName.Length)
+				$NewName = $NewName.Substring(0, $NewName.Length)
 				Write-Verbose "    > $NewName"
-                break
+				break
 			}
 
-            # yyyy-mm-dd-hh-mm-ss-(xxx)
+			# yyyy-mm-dd-hh-mm-ss-(xxx)
 			'^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}(_([0-9])+){0,1}-\(([a-zA-Z0-9+ ])+\)$' {
 				Write-Verbose "  Match: yyyy-mm-dd hh mm ss (xxx)"
 				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2) + "-" + $NewName.Substring(21)
-                $NewName = $NewName.Substring(0, $NewName.Length)
+				$NewName = $NewName.Substring(0, $NewName.Length)
 				Write-Verbose "    > $NewName"
-                break
+				break
 			}
 
-            # yyyy-mm-dd-hh-mm-ss_x (xxx)
+			# yyyy-mm-dd-hh-mm-ss_x (xxx)
 			'^[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}-[0-9]{2}_[0-9]+ \(([a-zA-Z0-9+ ])+\)$' {
 				Write-Verbose "  Match: yyyy-mm-dd hh mm ss_x (xxx)"
-                $Suffix = $NewName.Substring(20)
+				$Suffix = $NewName.Substring(20)
 				$NewName = $NewName.Substring(0, 4) + $NewName.Substring(5, 2) + $NewName.Substring(8, 2) + "_" + $NewName.Substring(11, 2) + $NewName.Substring(14, 2) + $NewName.Substring(17, 2) + "-" + $Suffix.Substring(0, $Suffix.IndexOf(" ")) + "-" + $NewName.Substring($NewName.IndexOf("(") + 1)
-                $NewName = $NewName.Substring(0, $NewName.Length)
+				$NewName = $NewName.Substring(0, $NewName.Length)
 				Write-Verbose "    > $NewName"
-                break
+				break
 			}
 			
 			# WhatsApp Image/Video yyyy-mm-dd at hh.mm.ss
@@ -418,30 +418,30 @@ foreach ($file in $files) {
 				Write-Verbose "    Match: WhatsApp Image/Video yyyy-mm-dd at hh.mm.ss"
 				$NewName = $NewName.Substring(15, 4) + $NewName.Substring(20, 2) + $NewName.Substring(23, 2) + "_" + $NewName.Substring(29, 2) + $NewName.Substring(32, 2) + $NewName.Substring(35, 2)
 				Write-Verbose "    > $NewName"
-                break
+				break
 			}
 
-            # FIH_yyyyMMdd_HHmmss
+			# FIH_yyyyMMdd_HHmmss
 			'^FIH_[0-9]{8}_[0-9]{6}$' {
-                Write-Verbose "  Match: FIH_yyyyMMdd_HHmmss"
+				Write-Verbose "  Match: FIH_yyyyMMdd_HHmmss"
 				$NewName = $NewName.Substring(4)
-                Write-Verbose "    > $NewName"
-                break
-            }
+				Write-Verbose "    > $NewName"
+				break
+			}
 
 			# UNKNOWN FORMAT
 			default {
 				if ($DateModifiedFallback) {
-                    Write-Verbose "    Unable to determine timestamp, falling back to Date Modified."
-                    $NewName = $file.LastWriteTime.ToString("yyyyMMdd_HHmmss")
-                    Write-Verbose "    > $NewName"
-                }
+					Write-Verbose "    Unable to determine timestamp, falling back to Date Modified."
+					$NewName = $file.LastWriteTime.ToString("yyyyMMdd_HHmmss")
+					Write-Verbose "    > $NewName"
+				}
 				else {
-                    Write-Error -Message "Unable to determine timestamp" -Category ParserError -ErrorId 2 -TargetObject $file.FullName `
-                        -RecommendedAction "Manually Rename the file" -CategoryActivity "Detect new filename" `
-                        -CategoryReason "EXIF Not Found and No Pattern Match" -CategoryTargetType "File"
-				    $NewName = "FAIL"
-                }
+					Write-Error -Message "Unable to determine timestamp" -Category ParserError -ErrorId 2 -TargetObject $file.FullName `
+						-RecommendedAction "Manually Rename the file" -CategoryActivity "Detect new filename" `
+						-CategoryReason "EXIF Not Found and No Pattern Match" -CategoryTargetType "File"
+					$NewName = "FAIL"
+				}
 				break
 			}
 		}
@@ -467,22 +467,22 @@ foreach ($file in $files) {
 
 			if ($file.Name -ne $Test) {
 				if ($DryRun) {
-				    Write-Warning "  [Dry Run] Would rename $($file.FullName) to $NewName$Extension"
-                }
+					Write-Warning "  [Dry Run] Would rename $($file.FullName) to $NewName$Extension"
+				}
 				else {
-                    Write-Host "  Renaming $($file.FullName) to $NewName$Extension"
-				    Rename-Item -path $File.Name -newName "$NewName$Extension"
-                }
+					Write-Host "  Renaming $($file.FullName) to $NewName$Extension"
+					Rename-Item -path $File.Name -newName "$NewName$Extension"
+				}
 			}
 		}
-        $TimeStampStr = $NewName.Substring(0, 4) + "-" + $NewName.Substring(4, 2) + "-" + $NewName.Substring(6, 2) + " " + $NewName.Substring(9, 2) + ":" + $NewName.Substring(11, 2) + ":" + $NewName.Substring(13, 2)
+		$TimeStampStr = $NewName.Substring(0, 4) + "-" + $NewName.Substring(4, 2) + "-" + $NewName.Substring(6, 2) + " " + $NewName.Substring(9, 2) + ":" + $NewName.Substring(11, 2) + ":" + $NewName.Substring(13, 2)
 		if ($DryRun) {
-            Write-Verbose "  [Dry Run] Would set timestamps on $NewName$Extension to $TimeStampStr"
-        }
+			Write-Verbose "  [Dry Run] Would set timestamps on $NewName$Extension to $TimeStampStr"
+		}
 		else {
-		    $TimeStamp = [datetime]$TimeStampStr
-		    Set-FileTimeStamps "$NewName$Extension" $TimeStamp
-        }
+			$TimeStamp = [datetime]$TimeStampStr
+			Set-FileTimeStamps "$NewName$Extension" $TimeStamp
+		}
 	}
 }
 Set-Location $origDir
