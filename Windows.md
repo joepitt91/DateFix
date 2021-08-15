@@ -32,4 +32,4 @@ Once downloaded or built, the exe works the same as the multi-platform py script
 
 1. Download, or build, `DateFix.exe`,
 2. Run `./DateFix.exe -help` for detailed usage information.
-3. Run DateFix with the desired options (see below).
+3. Run DateFix with the desired options (see [README](README.md)).
