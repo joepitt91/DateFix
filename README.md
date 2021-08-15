@@ -7,36 +7,23 @@ consistently as possible using the yyyyMMdd_HHmmss\[_n\].ext format. The scripts
 Taken EXIF Date, if this is not available the file's current filename is processed, optionally if both fail, the file's
 last modified time can be used.
 
-## Requirements (Multi-Platform)
+A [Windows executable](Windows.md) is available / can be built, removing the need for end users to have Python and the
+prerequisite modules installed.
+
+## Requirements
 
 * Python3 (required).
 * venv (optional, but recommended).
 * pip (optional, but recommended - alternatively manually install the packages in `requirements.txt`).
 
-## Usage (Windows Only)
-
-A binary of DateFix, with all dependencies bundled is available, this has been built using the `pyinstaller` and
-`pyinstaller_versionfile` modules, using:
-
-     python -m venv .DateFix
-     .DateFix/Scripts/activate.ps1
-     pip install -r requirements.txt
-     create-version-file .\version.yaml --outfile .\version.txt
-     pyinstaller --clean --onefile --name DateFix --paths .\.DateFix\Lib\site-packages\ --icon .\Logo.ico --version-file .\version.txt .\DateFix.py
-     deactivate
-
-1. Download the latest exe
-2. Run DateFix `./DateFix.exe` for usage information.
-3. Run DateFix with the desired options (see below).
-
-## Installation (Multi-Platform)
+## Installation
 
 1. Create a Virtual Environment `python3 -m venv .DateFix` (Linux} or `python -m venv .DateFix` (Windows).
 2. Activate the Virtual Environment `source .DateFix/bin/activate` (Linux) or `.DateFix/Scripts/activate.ps1` (Windows).
 3. Install dependencies `pip3 install -r requirements.txt` (Linux) or `pip install -r requirements.txt` (Windows)
 4. (Unix only) Make the Python scripts executable `chmod +x *.py`
 
-## Usage (Multi-Platform)
+## Usage
 
 1. Activate the Virtual Environment, if not already active, `source .DateFix/bin/activate` (Linux) or
      `.DateFix/Scripts/activate.ps1` (Windows).
