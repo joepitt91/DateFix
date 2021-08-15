@@ -17,4 +17,5 @@ with open("DateFix-Win.py", "w") as f:
 
 create_versionfile_from_input_file("version.txt", "version.yaml")
 system("pyinstaller --clean --onefile --name DateFix --paths .DateFix\\Lib\\site-packages --icon Logo.ico --version-file version.txt DateFix-Win.py")
+remove("version.txt")
 remove("DateFix-Win.py")
