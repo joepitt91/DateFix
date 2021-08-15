@@ -40,7 +40,7 @@ A binary of DateFix, with all dependencies bundled is available, this has been b
 
 1. Activate the Virtual Environment, if not already active, `source .DateFix/bin/activate` (Linux) or
      `.DateFix/Scripts/activate.ps1` (Windows).
-2. Run DateFix `./DateFix.py` for usage information.
+2. Run DateFix `./DateFix.py -help` for detailed usage information.
 3. Run DateFix with the desired options (see below).
 4. Once finished, leave the Virtual Environment `deactivate`.
 
@@ -52,6 +52,7 @@ The following arguments can be passed in any order to `./DateFix.py`:
 * `-DateModifiedFallback` - If EXIF and filename processing fails, revert to file modified time -
  **use with caution!** (default `False`).
 * `-DryRun` - Run without renaming any files or modifying any timestampes (default `False`).
+* `-Help` - Displays detailed usage information.
 * `-Recurse` - Recursivly process all child directories (default `False`).
 * `-Recurse=<n>` - Recursivly process child directories up to `<n>` levels deep (default `Unlimited`).
 * `-SkipEXIF` - Skip EXIF checking for all files (default `False`).

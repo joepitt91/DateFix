@@ -88,6 +88,34 @@ if len(argv) > 1:
             Logger.setLevel(DEBUG)
             debug("Verbose output enabled")
 
+        elif arg.lower() == "-help":
+            print("DateFix - Standardise Photo and Video filenames and timestamps.")
+            print()
+            print(
+                "Usage: DateFix.py [-Verbose] [-TimeZone=<Region>/<City>] [-Recurse[=<levels>]] [-SkipEXIF] \
+[-DateModifiedFallback] [-DryRun] <Path>")
+            print()
+            print("<Path> (required)")
+            print("    The directory to start in.")
+            print("-DateModifiedFallback")
+            print("    If EXIF and filename processing fails, revert to file modified time - use with caution! \
+(default False).")
+            print("-DryRun")
+            print(
+                "    Run without renaming any files or modifying any timestampes (default False).")
+            print("-Recurse")
+            print("    Recursivly process all child directories (default False).")
+            print("-Recurse=<n>")
+            print(
+                "    Recursivly process child directories up to <n> levels deep (default Unlimited).")
+            print("-SkipEXIF")
+            print("    Skip EXIF checking for all files (default False).")
+            print("-TimeZone=<Region>/<City>")
+            print("    Sets the Time Zone to use for naming files (default Etc/UTC).")
+            print("-Verbose")
+            print("    Write additional output while running.")
+            exit()
+
         elif isdir(arg):
             if Path == None:
                 Path = arg
@@ -95,7 +123,9 @@ if len(argv) > 1:
             else:
                 error("Multiple paths provided, expected one.")
                 print(
-                    "Usage: DateFix.py [-Verbose] [-TimeZone=<Region>/<City>] [-Recurse[=<levels>]] [-SkipEXIF] [-DateModifiedFallback] [-DryRun] <Path>")
+                    "Usage: DateFix.py [-Verbose] [-TimeZone=<Region>/<City>] [-Recurse[=<levels>]] [-SkipEXIF] \
+[-DateModifiedFallback] [-DryRun] <Path>")
+                print("Help: DateFix.py -Help")
                 exit()
 
         else:
@@ -105,14 +135,17 @@ if len(argv) > 1:
                 error(
                     "Invalid path '{0}', must be an existing directory".format(arg))
             print(
-                "Usage: DateFix.py [-Verbose] [-TimeZone=<Region>/<City>] [-Recurse[=<levels>]] [-SkipEXIF] " +
-                "[-DateModifiedFallback] [-DryRun] <Path>")
+                "Usage: DateFix.py [-Verbose] [-TimeZone=<Region>/<City>] [-Recurse[=<levels>]] [-SkipEXIF] \
+[-DateModifiedFallback] [-DryRun] <Path>")
+            print("Help: DateFix.py -Help")
             exit()
 
 # If no path provided, show usage message
 if Path == None:
     print(
-        "Usage: DateFix.py [-Verbose] [-TimeZone=<Region>/<City>] [-Recurse[=<levels>]] [-SkipEXIF] [-DateModifiedFallback] [-DryRun] <Path>")
+        "Usage: DateFix.py [-Verbose] [-TimeZone=<Region>/<City>] [-Recurse[=<levels>]] [-SkipEXIF] [-DateModifiedFallback] \
+[-DryRun] <Path>")
+    print("Help: DateFix.py -Help".format(str(__file__)))
     exit()
 
 debug("Getting files")
