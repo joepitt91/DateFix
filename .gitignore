@@ -1,0 +1,7 @@
+__pycache__/
+.DateFix/
+.vscode/
+build/
+dist/
+DateFix.spec
+version.txt
