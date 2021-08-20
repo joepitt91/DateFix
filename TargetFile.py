@@ -305,9 +305,12 @@ class TargetFile:
             return True
 
         # Pattern 19: PXL_yyyymmdd_hhmmssxxx
-        elif match(r'^PXL_[0-9]{8}_[0-9]{9}$', self.OriginalName):
+        elif match(r'^PXL_(?P<Timestamp>\d{8}_\d{6})\d{3}(\.(?P<Label>[A-Z]+))?$', self.OriginalName):
             debug("  Match: PXL_yyyymmdd_hhmmss")
-            self.Timestamp = self.OriginalName[4:19]
+            matches = match(r'^PXL_(?P<Timestamp>\d{8}_\d{6})\d{3}(\.(?P<Label>[A-Z]+))?$', self.OriginalName)
+            self.Timestamp = matches['Timestamp']
+            if matches['Label'] != None:
+                self.Label = matches['Label']
             return True
 
         else:
