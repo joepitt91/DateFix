@@ -304,6 +304,12 @@ class TargetFile:
             self.Timestamp = self.OriginalName[4:]
             return True
 
+        # Pattern 19: PXL_yyyymmdd_hhmmssxxx
+        elif match(r'^PXL_[0-9]{8}_[0-9]{9}$', self.OriginalName):
+            debug("  Match: PXL_yyyymmdd_hhmmss")
+            self.Timestamp = self.OriginalName[4:19]
+            return True
+
         else:
             raise DateTimeDetectionError("No pattern match")
 
