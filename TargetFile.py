@@ -51,6 +51,7 @@ class TargetFile:
 
         # Initalise optional instance variables
         self.DeduplicationID = None
+        self.Extension = ""
         self.Label = None
 
         debug(Path)
